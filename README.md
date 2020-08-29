@@ -1,5 +1,5 @@
 # Test Web Application
-Simple web app available in two variants.
+Simple web application available in two variants.
 
 First one based on Java Spring Boot framework and listen tcp/8082 port.
 
