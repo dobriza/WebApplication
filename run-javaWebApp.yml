@@ -1,0 +1,31 @@
+---
+- hosts: java
+  become: yes
+  gather_facts: no
+  tasks: 
+    - name: Copy jar file to target host
+      copy: 
+        src: ./javaWebApp/target/serving-web-content-0.0.1-SNAPSHOT.jar
+        dest: /bin/serving-web-content-0.0.1-SNAPSHOT.jar
+        owner: root
+        group: root
+        mode: '0777'
+    - name:   create java web app service
+      blockinfile:
+        create: yes
+        insertafter: EOF
+        path: /etc/systemd/system/javaWebApp.service
+        block: |
+          [Unit]
+          Description=Java Web App
+          
+          [Service]
+          WorkingDirectory=/bin
+          ExecStart=/usr/lib/java14/jdk-14.0.2/bin/java -jar serving-web-content-0.0.1-SNAPSHOT.jar
+          User=root
+          Type=simple
+          Restart=on-failure
+          RestartSec=10
+
+          [Install]
+          WantedBy=multi-user.target

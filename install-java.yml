@@ -1,0 +1,64 @@
+---
+- hosts: java
+  become: yes
+  gather_facts: no
+  pre_tasks:
+    - name: install python
+      raw: test -e /usr/bin/python || (apt-get -y update && apt-get install -y python-minimal)
+
+  tasks:
+    - name: Gather facts
+      setup:
+
+    - name: Download Java tarball
+      get_url:
+        url: https://download.oracle.com/otn-pub/java/jdk/14.0.2+12/205943a0976c4ed48cb16f1043c5c647/jdk-14.0.2_linux-x64_bin.tar.gz
+        dest: /etc/jdk14.0.2.tar.gz
+        validate_certs: no
+        headers: {Cookie: oraclelicense=accept-securebackup-cookie}
+          
+
+    - name: make java 14 directory
+      file:
+        path: /usr/lib/java14
+        state: directory
+
+    - name: unpack tarball
+      unarchive:
+        src: /etc/jdk14.0.2.tar.gz
+        dest: /usr/lib/java14
+        remote_src: yes
+
+    - name: update alternatives for java
+      alternatives:
+        name: java
+        path: /usr/lib/java14/jdk-14.0.2/bin/java
+        link: /usr/bin/java
+        priority: 20000
+
+    - name: set java home as environment variable
+      blockinfile:
+        insertafter: EOF
+        path: /etc/environment
+        block: 
+          export JAVA_HOME=/usr/lib/java14/jdk14.0.2
+
+
+    - name: set PATH
+      blockinfile:
+        insertafter: EOF
+        path: /etc/environment
+        block: 
+          export PATH=$JAVA_HOME/bin:$PATH
+      notify: Reboot host and wait for it to restart
+   
+  handlers:
+    - name: Reboot host and wait for it to restart
+      reboot:
+        msg: "Reboot initiated by Ansible"
+        connect_timeout: 5
+        reboot_timeout: 600
+        pre_reboot_delay: 0
+        post_reboot_delay: 30
+        test_command: whoami
+
